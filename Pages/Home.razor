@@ -1,0 +1,109 @@
+﻿@page "/"
+@using CardFlip.Objects
+
+<div class="d-flex justify-content-center position-relative">
+
+    <div style="width: 1000px;" class="d-flex flex-row gap-3 flex-wrap justify-content-center">
+        @foreach (Card card in Cards)
+        {
+            <div class="flip-card @(SelectedCards.Contains(card) ? "flip-card-selected" : null)" @onclick="() => OnCardClick(card)">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+
+                    </div>
+                    <div class="flip-card-back @(card.Solved ? "flip-card-solved" : null)">
+                        <img src="@card.Image" alt="Front Cover" style="width:200px; height:200px; object-fit: cover;">
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (allSolved)
+    {
+        <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" style="background-color: rgba(0, 0, 0, 0.5)">
+            <div style="background-color: white; border-radius: 5px; width: 400px; height: 200px;" class="d-flex align-items-center justify-content-center">
+                <h3 class="p-5" style="text-align: center;"><b>All solved</b></h3>
+            </div>
+        </div>
+    }
+
+</div>
+
+@code{
+    List<Card> Cards { get; set; } = new List<Card>();
+
+    List<Card> SelectedCards { get; set; } = new List<Card>();
+
+    Random random = new Random();
+
+    List<string> images { get; set; } = new List<string>()
+    {
+        "creepy.jpg",
+        "dila.jpg",
+        "duo.jpg",
+        "flexerist.jpg",
+        "kentutan.jpg",
+        "shat.jpg",
+        "stressed.jpg",
+        "swabe.jpg",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        for (int i = 0; i < 16; i++)
+        {
+            Card toAdd = new Card()
+                {
+                    CardId = i + 1,
+                    Image = images[i < images.Count() ? i : i - 8],
+                };
+
+            Cards.Add(toAdd);
+        }
+
+        Cards = Cards.OrderBy(a => random.Next()).ToList();
+    }
+
+    bool allSolved { get; set; }
+
+    async Task OnCardClick(Card card)
+    {
+        if (card.Solved)
+        {
+            return;
+        }
+
+        SelectedCards.Add(card);
+
+        if (SelectedCards.Count == 2)
+        {
+            await Task.Delay(400);
+
+            if (SelectedCards[0].Image == SelectedCards[1].Image)
+            {
+                var card1 = Cards.Where(a => SelectedCards[0].CardId == a.CardId).FirstOrDefault();
+                var card2 = Cards.Where(a => SelectedCards[1].CardId == a.CardId).FirstOrDefault();
+
+                if (card1 != null)
+                {
+                    card1.Solved = true;
+                }
+
+                if (card2 != null)
+                {
+                    card2.Solved = true;
+                }
+
+                if (Cards.Where(a => a.Solved).ToArray().Count() == Cards.Count())
+                {
+                    allSolved = true;
+                }
+
+                StateHasChanged();
+            }
+
+            SelectedCards.Clear();
+        }
+    }
+}
