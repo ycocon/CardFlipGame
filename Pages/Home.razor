@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using CardFlip.Objects
+@using System.Diagnostics
 
 <div class="d-flex justify-content-center position-relative">
 
@@ -28,6 +29,28 @@
         </div>
     }
 
+    @if (allSolved)
+    {
+        <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" style="background-color: rgba(0, 0, 0, 0.5)">
+            <div style="background-color: white; border-radius: 5px; width: 400px; height: 200px;" class="d-flex align-items-center justify-content-center flex-column">
+                <h3 class="p-2" style="text-align: center;"><b>All solved</b></h3>
+                <p>Your total second is: @stopwatch.Elapsed.TotalSeconds</p>
+                <button class="btn btn-primary" @onclick="Reset">Reset</button>
+            </div>
+        </div>
+    }
+
+    @if (!ready)
+    {
+        <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" style="background-color: rgba(0, 0, 0, 0.5)">
+            <div style="background-color: white; border-radius: 5px; width: 400px; height: 200px;" class="d-flex align-items-center justify-content-center flex-column">
+                <h3 class="p-2" style="text-align: center;"><b>Ready?</b></h3>
+                <button class="btn btn-primary" @onclick="OnStartButtonClick">Start</button>
+            </div>
+        </div>
+    }
+
+
 </div>
 
 @code{
@@ -49,23 +72,25 @@
         "swabe.jpg",
     };
 
+    bool allSolved { get; set; }
+
+    bool ready { get; set; }
+
+    Stopwatch stopwatch = new Stopwatch();
+
+    string highScore { get; set; } = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
-        for (int i = 0; i < 16; i++)
-        {
-            Card toAdd = new Card()
-                {
-                    CardId = i + 1,
-                    Image = images[i < images.Count() ? i : i - 8],
-                };
-
-            Cards.Add(toAdd);
-        }
-
-        Cards = Cards.OrderBy(a => random.Next()).ToList();
+        Reset();
     }
 
-    bool allSolved { get; set; }
+    void OnStartButtonClick()
+    {
+        ready = true;
+
+        stopwatch.Start(); 
+    }
 
     async Task OnCardClick(Card card)
     {
@@ -97,7 +122,7 @@
 
                 if (Cards.Where(a => a.Solved).ToArray().Count() == Cards.Count())
                 {
-                    allSolved = true;
+                    OnGameSolved();
                 }
 
                 StateHasChanged();
@@ -105,5 +130,34 @@
 
             SelectedCards.Clear();
         }
+    }
+
+    void Reset()
+    {
+        allSolved = false;
+        ready = false;
+        Cards = new List<Card>();
+        SelectedCards = new List<Card>();
+
+        stopwatch.Reset();
+
+        for (int i = 0; i < 16; i++)
+        {
+            Card toAdd = new Card()
+                {
+                    CardId = i + 1,
+                    Image = images[i < images.Count() ? i : i - 8],
+                };
+
+            Cards.Add(toAdd);
+        }
+
+        Cards = Cards.OrderBy(a => random.Next()).ToList();
+    }
+
+    async void OnGameSolved()
+    {
+        allSolved = true;
+        stopwatch.Stop();
     }
 }
